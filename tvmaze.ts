@@ -4,15 +4,30 @@ import * as $ from 'jquery';
 const $showsList = $("#showsList");
 const $episodesArea = $("#episodesArea");
 const $searchForm = $("#searchForm");
+const $episodesList = $("#episodesList");
 
-const DEFAULT_IMAGE_URL: string = "https://tinyurl.com/tv-missing"
-const TVMAZE_API_URL: string = "https://api.tvmaze.com/search"
+const DEFAULT_IMAGE_URL = "https://tinyurl.com/tv-missing"
+const TVMAZE_API_URL = "https://api.tvmaze.com"
 
-interface ShowInterface {
+interface IShowFromApi {
   id: number;
   name: string;
   summary: string;
-  image: string | null;
+  image: { medium: string } | null
+}
+
+interface IShow{
+  id: number;
+  name: string;
+  summary: string;
+  image: string
+}
+
+interface IEpisode{
+  id: number;
+  name: string;
+  season: number;
+  number: number
 }
 
 /** Given a search term, search for tv shows that match that query.
@@ -22,19 +37,27 @@ interface ShowInterface {
  *    (if no image URL given by API, put in a default image URL)
  */
 
-async function searchShowsByTerm(term: string): Promise<ShowInterface[]> {
-  const resp = await axios.get(`${TVMAZE_API_URL}/shows?q=${term}`)
+async function searchShowsByTerm(term: string): Promise<IShow[]> {
+  const resp = await axios.get(`${TVMAZE_API_URL}/search/shows?q=${term}`);
+  const shows = resp.data;
+  return shows.map((result: {show:IShowFromApi }) : IShow => {
+    return {
+      id: result.show.id,
+      name: result.show.name,
+      summary: result.show.summary,
+      image: result.show.image?.medium || DEFAULT_IMAGE_URL
+    }
+  });
 
-  shows.map((show: ShowInterface) => show.image === null ? show.image = DEFAULT_IMAGE_URL
-                                                         : show.image = show.image);
-  return shows;
+
+
 }
 
 
 
 /** Given list of shows, create markup for each and to DOM */
 
-function populateShows(shows) {
+function populateShows(shows: IShow[] ) {
   $showsList.empty();
 
   for (let show of shows) {
@@ -42,8 +65,8 @@ function populateShows(shows) {
         `<div data-show-id="${show.id}" class="Show col-md-12 col-lg-6 mb-4">
          <div class="media">
            <img
-              src="http://static.tvmaze.com/uploads/images/medium_portrait/160/401704.jpg"
-              alt="Bletchly Circle San Francisco"
+              src=${show.image}
+              alt=${show.name}
               class="w-25 me-3">
            <div class="media-body">
              <h5 class="text-primary">${show.name}</h5>
@@ -82,8 +105,30 @@ $searchForm.on("submit", async function (evt) {
  *      { id, name, season, number }
  */
 
-// async function getEpisodesOfShow(id) { }
+ async function getEpisodesOfShow(id: number): Promise<IEpisode[]> {
+
+  const resp = await axios.get(`${TVMAZE_API_URL}/shows/${id}/episodes`);
+  const episodes = resp.data;
+  console.log(episodes)
+  return episodes.map((result : IEpisode )=> {
+    return {
+      id: result.id,
+      name: result.name,
+      season: result.season,
+      number: result.number
+    }
+  });
+
+  }
+
 
 /** Write a clear docstring for this function... */
 
-// function populateEpisodes(episodes) { }
+ function populateEpisodes(episodes: IEpisode[]) {
+  getEpisodesOfShow()
+  $episodesList.
+
+
+
+
+ }
